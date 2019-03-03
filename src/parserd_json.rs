@@ -1,4 +1,6 @@
 use std::mem;
+use std::ptr;
+
 const JSON_VALUE_MASK: u64 = 0xFFFFFFFFFFFFFF;
 const DEFAULT_MAX_DEPTH: usize = 1024;
 
@@ -89,9 +91,16 @@ impl ParsedJson {
     }
 
     #[inline]
-    pub fn write_tape_s64(&mut self, i: i64) {
+    pub fn write_tape_i64(&mut self, i: i64) {
         self.write_tape(0, b'l');
-        self.tape[self.current_loc] = i as u64;
+        // self.tape[self.current_loc] = i as u64;
+        unsafe {
+            ptr::copy_nonoverlapping(
+                &i,
+                self.tape.as_mut_ptr() as *mut i64,
+                mem::size_of::<i64>(),
+            )
+        };
         self.current_loc += 1;
     }
 
@@ -99,7 +108,14 @@ impl ParsedJson {
     pub fn write_tape_double(&mut self, d: f64) {
         self.write_tape(0, b'd');
         assert!(mem::size_of_val(&d) == mem::size_of_val(&self.tape[self.current_loc]));
-        
+        unsafe {
+            ptr::copy_nonoverlapping(
+                &d,
+                self.tape.as_mut_ptr() as *mut f64,
+                mem::size_of::<f64>(),
+            )
+        };
+        self.current_loc += 1;
     }
 }
 
