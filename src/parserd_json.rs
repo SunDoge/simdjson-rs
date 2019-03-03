@@ -1,9 +1,11 @@
+use std::mem;
+
 pub struct ParsedJson {
     byte_capacity: usize,
     depth_capacity: usize,
     tape_capacity: usize,
     string_capacity: usize,
-    current_loc: u32,
+    current_loc: usize,
     n_structural_indexes: u32,
     structural_indexes: Vec<u32>,
     tape: Vec<u64>,
@@ -76,6 +78,26 @@ impl ParsedJson {
         self.current_string_buf_loc.clone_from(&self.string_buf);
         self.current_loc = 0;
         self.is_valid = false;
+    }
+
+    #[inline]
+    pub fn write_tape(&mut self, val: u64, c: u8) {
+        self.tape[self.current_loc] = val | ((c as u64) << 56);
+        self.current_loc += 1;
+    }
+
+    #[inline]
+    pub fn write_tape_s64(&mut self, i: i64) {
+        self.write_tape(0, b'l');
+        self.tape[self.current_loc] = i as u64;
+        self.current_loc += 1;
+    }
+
+    #[inline]
+    pub fn write_tape_double(&mut self, d: f64) {
+        self.write_tape(0, b'd');
+        assert!(mem::size_of_val(&d) == mem::size_of_val(&self.tape[self.current_loc]));
+        
     }
 }
 
