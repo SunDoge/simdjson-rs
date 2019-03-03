@@ -9,8 +9,22 @@ pub mod stage2_build_tape;
 
 #[cfg(test)]
 mod tests {
+
+    #[derive(Debug)]
+    struct A;
+
+    impl Drop for A{
+        fn drop(&mut self) {
+            println!("drop");
+        }
+    }
+
+
     #[test]
     fn it_works() {
-        assert_eq!(2 + 2, 4);
+        let mut a = vec![A, A];
+        println!("{:?}", a);
+        a = Vec::with_capacity(0);
+        println!("{:?}", a);
     }
 }
