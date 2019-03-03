@@ -1,19 +1,27 @@
 use super::error::SimdJsonError;
 use super::parsed_json::{ParsedJson, DEFAULT_MAX_DEPTH};
 use super::utils::SIMDJSON_PADDING;
+use aligned_alloc::{aligned_alloc, aligned_free};
+use std::mem;
+use std::borrow::{Cow};
 
-pub fn json_parse(
-    buf: &str,
+
+pub fn json_parse<'a, S>(
+    buf: S,
     pj: &mut ParsedJson,
     realloc_if_needed: bool,
-) -> Result<(), SimdJsonError> {
+) -> Result<(), SimdJsonError> 
+where S: Into<Cow<'a, str>>
+{   
+    let buf=buf.into();
     let mut reallocated = false;
 
     if realloc_if_needed {
         let pagesize = page_size::get();
 
         if buf.as_bytes()[buf.len() - 1] as usize % pagesize < SIMDJSON_PADDING {
-            let tmpbuf = buf.to_string();
+            let tmpbuf = buf.as_ptr();
+            buf = Cow::from()
 
             println!("some{}", buf);
         }

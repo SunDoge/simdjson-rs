@@ -6,3 +6,4 @@ edition = "2018"
 
 [dependencies]
 page_size = "0.4"
+aligned_alloc = "0.1"

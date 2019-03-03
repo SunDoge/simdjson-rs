@@ -2,14 +2,14 @@ use std::mem;
 use std::ptr;
 
 
-const JSON_VALUE_MASK: u64 = 0xFFFFFFFFFFFFFF;
+pub const JSON_VALUE_MASK: u64 = 0xFFFFFFFFFFFFFF;
 pub const DEFAULT_MAX_DEPTH: usize = 1024;
 
 pub struct ParsedJson {
     byte_capacity: usize,
     current_loc: usize,
     structural_indexes: Vec<u32>,
-    tape: Vec<u64>,
+    pub tape: Vec<u64>,
     containing_scope_offset: Vec<u32>,
     ret_address: Vec<i8>,
     string_buf: String,
