@@ -5,3 +5,4 @@ authors = ["SunDoge <384813529@qq.com>"]
 edition = "2018"
 
 [dependencies]
+page_size = "0.4"
