@@ -1,12 +1,24 @@
 use super::error::SimdJsonError;
 use super::parsed_json::{ParsedJson, DEFAULT_MAX_DEPTH};
+use super::utils::SIMDJSON_PADDING;
 
 pub fn json_parse(
     buf: &str,
     pj: &mut ParsedJson,
     realloc_if_needed: bool,
 ) -> Result<(), SimdJsonError> {
-    let pagesize = page_size::get();
+    let mut reallocated = false;
+
+    if realloc_if_needed {
+        let pagesize = page_size::get();
+
+        if buf.as_bytes()[buf.len() - 1] as usize % pagesize < SIMDJSON_PADDING {
+            let tmpbuf = buf.to_string();
+
+            println!("some{}", buf);
+        }
+    }
+
     Ok(())
 }
 

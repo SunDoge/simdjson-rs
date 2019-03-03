@@ -9,7 +9,7 @@ use std::arch::x86_64::__m256i;
 
 use std::mem;
 
-const SIMDJSON_PADDING: usize = mem::size_of::<__m256i>(); // 32
+pub const SIMDJSON_PADDING: usize = mem::size_of::<__m256i>(); // 32
 
 macro_rules! roundup_n {
     ($a:expr, $n:expr) => {
