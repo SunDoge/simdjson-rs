@@ -1,16 +1,21 @@
+use super::error::SimdJsonError;
 use super::parsed_json::{ParsedJson, DEFAULT_MAX_DEPTH};
 
-pub fn json_parse(buf: &str, pj: &mut ParsedJson, realloc_if_needed: bool) -> Result<(), String> {
+pub fn json_parse(
+    buf: &str,
+    pj: &mut ParsedJson,
+    realloc_if_needed: bool,
+) -> Result<(), SimdJsonError> {
     let pagesize = page_size::get();
     Ok(())
 }
 
-pub fn build_parsed_json(buf: &str, realloc_if_needed: bool) -> Result<ParsedJson, String> {
+pub fn build_parsed_json(buf: &str, realloc_if_needed: bool) -> Result<ParsedJson, SimdJsonError> {
     let mut pj = ParsedJson::new();
     let ok = pj.allocate_capacity(buf.len(), DEFAULT_MAX_DEPTH);
     if ok {
         let res = json_parse(buf, &mut pj, realloc_if_needed);
-        // assert_eq!(res.is_ok(), pj.is_valid());
+    // assert_eq!(res.is_ok(), pj.is_valid());
     } else {
         eprintln!("failure during memory allocation ");
     }

@@ -1,6 +1,7 @@
 use std::mem;
 use std::ptr;
 
+
 const JSON_VALUE_MASK: u64 = 0xFFFFFFFFFFFFFF;
 pub const DEFAULT_MAX_DEPTH: usize = 1024;
 
