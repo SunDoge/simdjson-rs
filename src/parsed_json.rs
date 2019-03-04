@@ -7,7 +7,7 @@ pub const DEFAULT_MAX_DEPTH: usize = 1024;
 pub struct ParsedJson {
     byte_capacity: usize,
     current_loc: usize,
-    structural_indexes: Vec<u32>,
+    pub structural_indexes: Vec<u32>,
     pub tape: Vec<u64>,
     containing_scope_offset: Vec<u32>,
     ret_address: Vec<i8>,
@@ -126,6 +126,10 @@ impl ParsedJson {
 
     pub fn n_structural_indexes(&self) -> usize {
         self.structural_indexes.len()
+    }
+
+    pub fn byte_capacity(&self) -> usize {
+        self.byte_capacity
     }
 }
 

@@ -1,5 +1,7 @@
 pub mod char;
 pub mod format;
+pub mod string_parsing_avx2;
+pub mod string_parsing_sse2;
 
 #[cfg(target_arch = "x86")]
 use std::arch::x86::__m256i;
