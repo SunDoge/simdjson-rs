@@ -19,45 +19,48 @@ use std::ptr;
 // {
 
 pub fn json_parse(
-    mut buf: Vec<u8>,
+    // mut buf: Vec<u8>,
+    buf: &[u8],
     pj: &mut ParsedJson,
     realloc_if_needed: bool,
 ) -> Result<(), SimdJsonError> {
-    let mut reallocated = false;
     let len = buf.len();
 
     if realloc_if_needed {
         let pagesize = page_size::get();
 
-        if buf[buf.len() - 1] as usize % pagesize < SIMDJSON_PADDING {
-            let tmpbuf = buf.as_ptr();
-            buf = allocate_padded_buffer(buf.len());
-            if buf.capacity() == 0 {
+        if buf[len - 1] as usize % pagesize < SIMDJSON_PADDING {
+            let mut new_buf = allocate_padded_buffer(len);
+
+            if new_buf.capacity() == 0 {
                 return Err(SimdJsonError::Memalloc);
             }
-            unsafe { ptr::copy_nonoverlapping(tmpbuf, buf.as_ptr() as *mut u8, len) };
 
-            reallocated = true;
+            unsafe { ptr::copy_nonoverlapping(buf.as_ptr(), new_buf.as_mut_ptr(), len) };
+
+            let res = if find_structural_bits(&new_buf, len, pj) {
+                unified_machine(&new_buf, len, pj)
+            } else {
+                Ok(())
+            };
 
             println!("some{:?}", buf);
+
+            unsafe { aligned_free(buf.as_ptr() as *mut ()) };
+            return res;
         }
     }
 
-    let res = if find_structural_bits(&buf, len, pj) {
+    if find_structural_bits(&buf, len, pj) {
         unified_machine(&buf, len, pj)
     } else {
         Ok(())
-    };
-
-    if reallocated {
-        unsafe { aligned_free(buf.as_ptr() as *mut ()) };
     }
-
-    res
 }
 
 pub fn build_parsed_json(
-    buf: Vec<u8>,
+    // buf: Vec<u8>,
+    buf: &[u8],
     realloc_if_needed: bool,
 ) -> Result<ParsedJson, SimdJsonError> {
     let mut pj = ParsedJson::new();
@@ -78,6 +81,20 @@ mod tests {
     #[test]
     fn build() {
         let buf = r#"{"a": "b"}"#;
-        let _pj = build_parsed_json(buf.as_bytes().to_vec(), true);
+        let _pj = build_parsed_json(buf.as_bytes(), true);
+    }
+
+    #[test]
+    fn realloc() {
+        let mut s = vec![1, 2, 3];
+        let mut s1 = vec![2, 3];
+        println!("{:?}", s);
+        println!("cap: {}", s.capacity());
+        unsafe {
+            ptr::swap(s.as_mut_ptr(), s1.as_mut_ptr());
+        }
+
+        println!("{:?}", s);
+        println!("cap: {}", s.capacity());
     }
 }

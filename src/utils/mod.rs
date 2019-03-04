@@ -25,4 +25,5 @@ pub fn allocate_padded_buffer(length: usize) -> Vec<u8> {
     let total_padded_length = length + SIMDJSON_PADDING;
     let padded_buffer = aligned_alloc(total_padded_length, 64) as *mut u8;
     unsafe { Vec::from_raw_parts(padded_buffer, total_padded_length, total_padded_length) }
+    // padded_buffer
 }
