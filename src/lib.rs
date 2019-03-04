@@ -13,12 +13,11 @@ mod tests {
     #[derive(Debug)]
     struct A;
 
-    impl Drop for A{
+    impl Drop for A {
         fn drop(&mut self) {
             println!("drop");
         }
     }
-
 
     #[test]
     fn it_works() {

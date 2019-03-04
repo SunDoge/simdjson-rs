@@ -1,7 +1,6 @@
 use std::mem;
 use std::ptr;
 
-
 pub const JSON_VALUE_MASK: u64 = 0xFFFFFFFFFFFFFF;
 pub const DEFAULT_MAX_DEPTH: usize = 1024;
 
@@ -12,9 +11,9 @@ pub struct ParsedJson {
     pub tape: Vec<u64>,
     containing_scope_offset: Vec<u32>,
     ret_address: Vec<i8>,
-    string_buf: String,
-    current_string_buf_loc: String,
-    is_valid: bool,
+    string_buf: Vec<u8>,
+    current_string_buf_loc: Vec<u8>,
+    pub is_valid: bool,
 }
 
 impl ParsedJson {
@@ -26,13 +25,11 @@ impl ParsedJson {
             tape: Vec::new(),
             containing_scope_offset: Vec::new(),
             ret_address: Vec::new(),
-            string_buf: String::new(),
-            current_string_buf_loc: String::new(),
+            string_buf: Vec::new(),
+            current_string_buf_loc: Vec::new(),
             is_valid: false,
         }
     }
-
-    
 
     pub fn allocate_capacity(&mut self, len: usize, max_depth: usize) -> bool {
         if max_depth == 0 || len == 0 {
@@ -47,12 +44,12 @@ impl ParsedJson {
         self.deallocate();
         self.is_valid = false;
         self.byte_capacity = 0;
-        
+
         let max_structures = roundup_n!(len, 64) + 2 + 7;
         self.structural_indexes = Vec::with_capacity(max_structures);
         let local_tape_capacity = roundup_n!(len, 64);
         let local_string_capacity = roundup_n!(len + 32, 64);
-        self.string_buf = String::with_capacity(local_string_capacity);
+        self.string_buf = Vec::with_capacity(local_string_capacity);
         self.tape = Vec::with_capacity(local_tape_capacity);
         self.containing_scope_offset = Vec::with_capacity(max_depth);
         self.ret_address = Vec::with_capacity(max_depth);
@@ -138,7 +135,7 @@ impl ParsedJson {
         self.ret_address = Vec::with_capacity(0);
         self.containing_scope_offset = Vec::with_capacity(0);
         self.tape = Vec::with_capacity(0);
-        self.string_buf = String::with_capacity(0);
+        self.string_buf = Vec::with_capacity(0);
         self.structural_indexes = Vec::with_capacity(0);
         self.is_valid = false;
     }

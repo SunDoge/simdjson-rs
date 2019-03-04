@@ -29,5 +29,3 @@ pub const STRUCTURAL_OR_WHITESPACE: [u32; 256] = [
 pub fn is_structural_or_whitespace(c: u8) -> u32 {
     STRUCTURAL_OR_WHITESPACE[c as usize]
 }
-
-
