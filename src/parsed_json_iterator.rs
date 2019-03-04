@@ -82,15 +82,39 @@ impl<'a> ParsedJsonIterator<'a> {
         self.location < self.tape_length
     }
 
+    // useful for debuging purposes
+    pub fn get_tape_location(&self) -> usize {
+        self.location
+    }
+
+    // useful for debuging purposes
+    pub fn get_tape_length(&self) -> usize {
+        self.tape_length
+    }
+
     /// returns the current depth (start at 1 with 0 reserved for the fictitious root node)
     pub fn get_depth(&self) -> usize {
         self.depth
+    }
+
+    pub fn get_scope_type(&self) -> u8 {
+        self.depth_index[self.depth].scope_type
     }
 
     pub fn move_forward(&mut self) -> bool {
         if self.location + 1 >= self.tape_length {
             return false;
         }
+
+        if self.current_type == b'[' || self.current_type == b'{' {
+            self.depth += 1;
+            self.depth_index[self.depth].start_of_scope = self.location;
+            self.depth_index[self.depth].scope_type = self.current_type;
+        }
+
+        self.location += 1;
+        // [TODO]
+
         true
     }
 }
