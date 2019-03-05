@@ -37,7 +37,7 @@ pub fn find_structural_bits(buf: *const u8, len: usize, pj: &mut ParsedJson) -> 
 
     let prev_iter_ends_pseudo_pred = 1u64;
     let len_minus_64 = if len < 64 { 0 } else { len - 64 };
-    let structurals = 0u64;
+    let mut structurals = 0u64;
 
     for idx in (0..len_minus_64).step_by(64) {
         // [TODO] prefetch
@@ -97,6 +97,7 @@ pub fn find_structural_bits(buf: *const u8, len: usize, pj: &mut ParsedJson) -> 
         while structurals != 0u64 {
             let base_usize = base as usize;
             base_ptr[base_usize + 0] = idx as u32 - 64 + trailing_zeroes(structurals);
+            structurals = structurals & (structurals - 1);
         }
     }
 
