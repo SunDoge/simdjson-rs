@@ -4,9 +4,9 @@ pub mod string_parsing_avx2;
 pub mod string_parsing_sse2;
 
 #[cfg(target_arch = "x86")]
-use std::arch::x86::__m256i;
+use std::arch::x86::*;
 #[cfg(target_arch = "x86_64")]
-use std::arch::x86_64::__m256i;
+use std::arch::x86_64::*;
 
 use aligned_alloc::aligned_alloc;
 use std::mem;
@@ -21,9 +21,23 @@ macro_rules! roundup_n {
     };
 }
 
-pub fn allocate_padded_buffer(length: usize) -> Vec<u8> {
+pub fn allocate_padded_buffer(length: usize) -> *mut u8 {
     let total_padded_length = length + SIMDJSON_PADDING;
     let padded_buffer = aligned_alloc(total_padded_length, 64) as *mut u8;
-    unsafe { Vec::from_raw_parts(padded_buffer, total_padded_length, total_padded_length) }
-    // padded_buffer
+    // unsafe { Vec::from_raw_parts(padded_buffer, total_padded_length, total_padded_length) }
+    padded_buffer
+}
+
+pub fn hamming(input_num: u64) -> i32 {
+    unsafe { _popcnt64(input_num as i64) }
+}
+
+
+pub fn trailing_zeroes(input_num: u64) -> u32 {
+    #[cfg(target_feature = "bmi1")]
+    unsafe {
+        _tzcnt_u64(input_num) as u32
+    }
+    #[cfg(not(target_feature = "bmi1"))]
+    input_num.trailing_zeros()
 }

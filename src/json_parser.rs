@@ -19,40 +19,42 @@ use std::ptr;
 // {
 
 pub fn json_parse(
-    // mut buf: Vec<u8>,
-    buf: &[u8],
+    buf: *const u8,
+    len: usize,
     pj: &mut ParsedJson,
     realloc_if_needed: bool,
 ) -> Result<(), SimdJsonError> {
-    let len = buf.len();
+    if pj.byte_capacity() < len {
+        return Err(SimdJsonError::Capacity);
+    }
 
     if realloc_if_needed {
         let pagesize = page_size::get();
 
-        if buf[len - 1] as usize % pagesize < SIMDJSON_PADDING {
-            let mut new_buf = allocate_padded_buffer(len);
+        if unsafe { buf.add(len - 1) } as usize % pagesize < SIMDJSON_PADDING {
+            println!("some{:?}", buf);
 
-            if new_buf.capacity() == 0 {
+            let new_buf = allocate_padded_buffer(len);
+
+            if new_buf.is_null() {
                 return Err(SimdJsonError::Memalloc);
             }
 
-            unsafe { ptr::copy_nonoverlapping(buf.as_ptr(), new_buf.as_mut_ptr(), len) };
+            unsafe { ptr::copy_nonoverlapping(buf, new_buf, len) };
 
-            let res = if find_structural_bits(&new_buf, len, pj) {
-                unified_machine(&new_buf, len, pj)
+            let res = if find_structural_bits(new_buf, len, pj) {
+                unified_machine(new_buf, len, pj)
             } else {
                 Ok(())
             };
 
-            println!("some{:?}", buf);
-
-            unsafe { aligned_free(buf.as_ptr() as *mut ()) };
+            unsafe { aligned_free(new_buf as *mut ()) };
             return res;
         }
     }
 
-    if find_structural_bits(&buf, len, pj) {
-        unified_machine(&buf, len, pj)
+    if find_structural_bits(buf, len, pj) {
+        unified_machine(buf, len, pj)
     } else {
         Ok(())
     }
@@ -60,13 +62,14 @@ pub fn json_parse(
 
 pub fn build_parsed_json(
     // buf: Vec<u8>,
-    buf: &[u8],
+    buf: *const u8,
+    len: usize,
     realloc_if_needed: bool,
 ) -> Result<ParsedJson, SimdJsonError> {
     let mut pj = ParsedJson::new();
-    let ok = pj.allocate_capacity(buf.len(), DEFAULT_MAX_DEPTH);
+    let ok = pj.allocate_capacity(len, DEFAULT_MAX_DEPTH);
     if ok {
-        let res = json_parse(buf, &mut pj, realloc_if_needed);
+        let res = json_parse(buf, len, &mut pj, realloc_if_needed);
         assert_eq!(res.is_ok(), pj.is_valid());
     } else {
         eprintln!("failure during memory allocation ");
@@ -81,20 +84,15 @@ mod tests {
     #[test]
     fn build() {
         let buf = r#"{"a": "b"}"#;
-        let _pj = build_parsed_json(buf.as_bytes(), true);
+        let _pj = build_parsed_json(buf.as_ptr(), buf.len(), true);
     }
 
     #[test]
     fn realloc() {
         let mut s = vec![1, 2, 3];
         let mut s1 = vec![2, 3];
-        println!("{:?}", s);
-        println!("cap: {}", s.capacity());
-        unsafe {
-            ptr::swap(s.as_mut_ptr(), s1.as_mut_ptr());
-        }
-
-        println!("{:?}", s);
-        println!("cap: {}", s.capacity());
+        println!("{}", s[1]);
+        println!("{:?}", s.as_ptr());
+        println!("{:x}", s.as_ptr() as usize);
     }
 }
