@@ -28,16 +28,13 @@ pub fn allocate_padded_buffer(length: usize) -> *mut u8 {
     padded_buffer
 }
 
-pub fn hamming(input_num: u64) -> i32 {
-    unsafe { _popcnt64(input_num as i64) }
+pub fn hamming(input_num: i64) -> u32 {
+    unsafe { _popcnt64(input_num) as u32 }
 }
 
-
-pub fn trailing_zeroes(input_num: u64) -> u32 {
-    #[cfg(target_feature = "bmi1")]
-    unsafe {
-        _tzcnt_u64(input_num) as u32
-    }
-    #[cfg(not(target_feature = "bmi1"))]
-    input_num.trailing_zeros()
+pub fn trailing_zeroes(input_num: i64) -> u32 {
+    // #[cfg(target_feature = "bmi1")]
+    unsafe { _tzcnt_u64(input_num as u64) as u32 }
+    // #[cfg(not(target_feature = "bmi1"))]
+    // input_num.trailing_zeros()
 }
