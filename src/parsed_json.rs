@@ -1,3 +1,5 @@
+use super::error::SimdJsonError;
+use super::stage2_build_tape::UnifiedMachine;
 use std::mem;
 use std::ptr;
 
@@ -9,8 +11,8 @@ pub struct ParsedJson {
     current_loc: usize,
     pub structural_indexes: Vec<u32>,
     pub tape: Vec<u64>,
-    containing_scope_offset: Vec<u32>,
-    ret_address: Vec<i8>,
+    pub containing_scope_offset: Vec<u32>,
+    // pub ret_address: Vec<fn(&mut UnifiedMachine) -> Result<(), SimdJsonError>>,
     string_buf: Vec<u8>,
     current_string_buf_loc: Vec<u8>,
     pub is_valid: bool,
@@ -24,7 +26,7 @@ impl ParsedJson {
             structural_indexes: Vec::new(),
             tape: Vec::new(),
             containing_scope_offset: Vec::new(),
-            ret_address: Vec::new(),
+            // ret_address: Vec::new(),
             string_buf: Vec::new(),
             current_string_buf_loc: Vec::new(),
             is_valid: false,
@@ -52,7 +54,7 @@ impl ParsedJson {
         self.string_buf = Vec::with_capacity(local_string_capacity);
         self.tape = Vec::with_capacity(local_tape_capacity);
         self.containing_scope_offset = Vec::with_capacity(max_depth);
-        self.ret_address = Vec::with_capacity(max_depth);
+        // self.ret_address = Vec::with_capacity(max_depth);
 
         // if some attr is null { return false }
 
@@ -105,6 +107,14 @@ impl ParsedJson {
         };
         self.current_loc += 1;
     }
+
+    pub fn get_current_loc(&self) -> u32 {
+        self.current_loc as u32
+    }
+
+    pub fn annotate_previous_loc(&mut self, saved_loc: usize, val: u64) {
+        self.tape[saved_loc] != val;
+    }
 }
 
 impl ParsedJson {
@@ -136,7 +146,7 @@ impl ParsedJson {
 impl ParsedJson {
     fn deallocate(&mut self) {
         self.byte_capacity = 0;
-        self.ret_address = Vec::with_capacity(0);
+        // self.ret_address = Vec::with_capacity(0);
         self.containing_scope_offset = Vec::with_capacity(0);
         self.tape = Vec::with_capacity(0);
         self.string_buf = Vec::with_capacity(0);

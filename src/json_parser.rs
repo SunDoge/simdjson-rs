@@ -5,8 +5,6 @@ use super::stage2_build_tape::unified_machine;
 use super::utils::{allocate_padded_buffer, SIMDJSON_PADDING};
 
 use aligned_alloc::aligned_free;
-use std::borrow::Cow;
-use std::mem;
 use std::ptr;
 
 // pub fn json_parse<'a, S>(
@@ -70,7 +68,7 @@ pub fn build_parsed_json(
     let ok = pj.allocate_capacity(len, DEFAULT_MAX_DEPTH);
     if ok {
         let res = json_parse(buf, len, &mut pj, realloc_if_needed);
-        assert_eq!(res.is_ok(), pj.is_valid());
+    // assert_eq!(res.is_ok(), pj.is_valid());
     } else {
         eprintln!("failure during memory allocation ");
     }
@@ -83,7 +81,15 @@ mod tests {
 
     #[test]
     fn build() {
-        let buf = r#"{"a": "b"}"#;
+        let buf = r#"
+        {
+            "name": "John Doe",
+            "age": 43,
+            "phones": [
+                "+44 1234567",
+                "+44 2345678"
+            ]
+        }"#;
         let _pj = build_parsed_json(buf.as_ptr(), buf.len(), true);
     }
 

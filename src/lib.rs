@@ -27,4 +27,35 @@ mod tests {
         a = Vec::with_capacity(0);
         println!("{:?}", a);
     }
+
+    #[test]
+    fn fantastic() {
+        struct B {
+            b: u32,
+        }
+
+        impl B {
+            pub fn new() -> B {
+                B { b: 0 }
+            }
+
+            pub fn use1(&mut self) -> u32 {
+                self.b += 1;
+                self.b
+            }
+
+            pub fn use2(&mut self) -> u32 {
+                self.b += 2;
+                self.b
+            }
+        }
+
+        let mut state: Vec<fn(&mut B) -> u32> = Vec::new();
+        state.push(B::use1);
+        state.push(B::use2);
+
+        let mut b = B::new();
+        println!("{}", state[0](&mut b));
+        println!("{}", state[1](&mut b));
+    }
 }
