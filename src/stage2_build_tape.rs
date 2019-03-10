@@ -5,6 +5,7 @@ use std::mem;
 use std::ptr;
 
 use super::utils::string_parsing_avx2::parse_string;
+use super::utils::SIMDJSON_PADDING;
 
 // macro_rules! update_char {
 //     ($i: ) => {
@@ -137,13 +138,46 @@ impl<'a> UnifiedMachine<'a> {
                 }
 
                 self.pj.write_tape(0, self.c);
-                return self.object_begin();
+                self.object_begin()
             }
-            _ => return self.fail(),
-        }
+            b'[' => {
+                self.pj
+                    .containing_scope_offset
+                    .push(self.pj.get_current_loc());
+                self.ret_address.push(Self::start_continue);
+                self.depth += 1;
+                if self.depth > self.pj.depth_capacity() {
+                    return self.fail();
+                }
 
-        self.pj.is_valid = true;
-        Ok(())
+                self.pj.write_tape(0, self.c);
+                self.array_begin()
+            }
+            b'"' => {
+                if !parse_string(self.buf, self.len, self.pj, self.depth, self.idx) {
+                    return self.fail();
+                }
+                Ok(())
+            }
+            b't' => {
+                let mut copy = Vec::with_capacity(self.len + SIMDJSON_PADDING);
+                unsafe {
+                    ptr::copy_nonoverlapping(self.buf, copy.as_mut_ptr(), self.len);
+                }
+                copy[self.len] = b'\0';
+                if !is_valid_true_atom(unsafe { copy.as_ptr().offset(self.idx) }) {
+                    return self.fail();
+                }
+
+                self.pj.write_tape(0, self.c);
+                Ok(())
+            }
+            b'f' => Ok(()),
+            b'n' => Ok(()),
+            b'0' | b'1' | b'2' | b'3' | b'4' | b'5' | b'6' | b'7' | b'8' | b'9' => Ok(()),
+            b'-' => Ok(()),
+            _ => self.fail(),
+        }
     }
 
     fn update_char(&mut self) {
@@ -196,12 +230,10 @@ impl<'a> UnifiedMachine<'a> {
                     return self.fail();
                 }
 
-                return self.object_key_state();
+                self.object_key_state()
             }
-            b'}' => {
-                return self.scope_end();
-            }
-            _ => return self.fail(),
+            b'}' => self.scope_end(),
+            _ => self.fail(),
         }
     }
 
