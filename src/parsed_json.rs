@@ -114,7 +114,7 @@ impl ParsedJson {
     }
 
     pub fn annotate_previous_loc(&mut self, saved_loc: usize, val: u64) {
-        self.tape[saved_loc] != val;
+        self.tape[saved_loc] |= val;
     }
 }
 
