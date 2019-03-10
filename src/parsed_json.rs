@@ -8,7 +8,7 @@ pub const DEFAULT_MAX_DEPTH: usize = 1024;
 
 pub struct ParsedJson {
     byte_capacity: usize,
-    current_loc: usize,
+    // current_loc: usize,
     pub structural_indexes: Vec<u32>,
     pub tape: Vec<u64>,
     pub containing_scope_offset: Vec<u32>,
@@ -22,7 +22,7 @@ impl ParsedJson {
     pub fn new() -> ParsedJson {
         ParsedJson {
             byte_capacity: 0,
-            current_loc: 0,
+            // current_loc: 0,
             structural_indexes: Vec::new(),
             tape: Vec::new(),
             containing_scope_offset: Vec::new(),
@@ -70,14 +70,15 @@ impl ParsedJson {
 
     pub fn init(&mut self) {
         self.current_string_buf_loc.clone_from(&self.string_buf);
-        self.current_loc = 0;
+        // self.current_loc = 0;
         self.is_valid = false;
     }
 
     #[inline]
     pub fn write_tape(&mut self, val: u64, c: u8) {
-        self.tape[self.current_loc] = val | ((c as u64) << 56);
-        self.current_loc += 1;
+        // self.tape[self.current_loc] = val | ((c as u64) << 56);
+        self.tape.push(val | ((c as u64) << 56));
+        // self.current_loc += 1;
     }
 
     #[inline]
@@ -91,13 +92,13 @@ impl ParsedJson {
                 mem::size_of::<i64>(),
             )
         };
-        self.current_loc += 1;
+        // self.current_loc += 1;
     }
 
     #[inline]
     pub fn write_tape_double(&mut self, d: f64) {
         self.write_tape(0, b'd');
-        assert!(mem::size_of_val(&d) == mem::size_of_val(&self.tape[self.current_loc]));
+        assert!(mem::size_of_val(&d) == mem::size_of_val(&self.tape.last().unwrap()));
         unsafe {
             ptr::copy_nonoverlapping(
                 &d,
@@ -105,11 +106,11 @@ impl ParsedJson {
                 mem::size_of::<f64>(),
             )
         };
-        self.current_loc += 1;
+        // self.current_loc += 1;
     }
 
     pub fn get_current_loc(&self) -> u32 {
-        self.current_loc as u32
+        self.tape.len() as u32
     }
 
     pub fn annotate_previous_loc(&mut self, saved_loc: usize, val: u64) {

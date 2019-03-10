@@ -69,63 +69,6 @@ fn is_valid_null_atom(loc: *const u8) -> bool {
     error == 0
 }
 
-// pub fn unified_machine(
-//     buf: *const u8,
-//     len: usize,
-//     pj: &mut ParsedJson,
-// ) -> Result<(), SimdJsonError> {
-//     let mut i = 0;
-//     let mut idx = 0;
-//     let mut c = 0;
-//     let mut depth = 0;
-
-//     pj.init();
-
-//     if pj.byte_capacity() < len {
-//         return Err(SimdJsonError::Capacity);
-//     }
-
-//     // [TODO] computed goto
-
-//     pj.ret_address[depth] = 's' as i8;
-
-//     pj.containing_scope_offset[depth] = pj.get_current_loc();
-//     pj.write_tape(0, b'r');
-//     depth += 1;
-//     if depth > pj.byte_capacity() {
-//         return fail(i, idx, c, depth, buf, pj);
-//     }
-
-//     update_char(&mut i, &mut idx, &mut c, buf, pj);
-
-//     match c {
-//         b'{' => {
-//             pj.containing_scope_offset[depth] = pj.get_current_loc();
-//             pj.ret_address[depth] = 's' as i8;
-//             depth += 1;
-//             if depth > pj.depth_capacity() {
-//                 return Err(SimdJsonError::TapeError);
-//             }
-//             pj.write_tape(0, c);
-//         }
-//         _ => unreachable!(),
-//     }
-
-//     pj.is_valid = true;
-//     Ok(())
-// }
-
-// fn fail(
-//     _i: usize,
-//     _idx: u32,
-//     _c: u8,
-//     _depth: usize,
-//     _buf: *const u8,
-//     _pj: &ParsedJson,
-// ) -> Result<(), SimdJsonError> {
-//     Err(SimdJsonError::TapeError)
-// }
-
 pub fn unified_machine(
     buf: *const u8,
     len: usize,
@@ -168,6 +111,15 @@ impl<'a> UnifiedMachine<'a> {
         self.ret_address = Vec::with_capacity(self.pj.depth_capacity());
         // self.ret_address[self.depth] = Self::start_continue;
         self.ret_address.push(Self::start_continue);
+        self.pj
+            .containing_scope_offset
+            .push(self.pj.get_current_loc());
+        self.pj.write_tape(0, b'r');
+        self.depth += 1;
+
+        if self.depth > self.pj.depth_capacity() {
+            return self.fail();
+        }
 
         self.pj.is_valid = true;
         Ok(())
