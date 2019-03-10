@@ -7,20 +7,6 @@ use std::ptr;
 use super::utils::string_parsing_avx2::parse_string;
 use super::utils::SIMDJSON_PADDING;
 
-// macro_rules! update_char {
-//     ($i: ) => {
-//         idx = pj.structural_indexes[i];
-//         i += 1;
-//         unsafe { c = *buf.add(idx) }
-//     };
-// }
-
-fn update_char(i: &mut usize, idx: &mut u32, c: &mut u8, buf: *const u8, pj: &ParsedJson) {
-    *idx = pj.structural_indexes[*i];
-    *i += 1;
-    unsafe { *c = *buf.offset(*idx as isize) }
-}
-
 fn is_valid_true_atom(loc: *const u8) -> bool {
     let tv = "true    ".as_ptr() as u64;
     let mask4 = 0x00000000ffffffffu64;
