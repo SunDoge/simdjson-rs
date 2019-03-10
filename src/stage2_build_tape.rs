@@ -4,6 +4,8 @@ use super::utils::char::is_not_structural_or_whitespace;
 use std::mem;
 use std::ptr;
 
+use super::utils::string_parsing_avx2::parse_string;
+
 // macro_rules! update_char {
 //     ($i: ) => {
 //         idx = pj.structural_indexes[i];
@@ -121,6 +123,25 @@ impl<'a> UnifiedMachine<'a> {
             return self.fail();
         }
 
+        self.update_char();
+
+        match self.c {
+            b'{' => {
+                self.pj
+                    .containing_scope_offset
+                    .push(self.pj.get_current_loc());
+                self.ret_address.push(Self::start_continue);
+                self.depth += 1;
+                if self.depth > self.pj.depth_capacity() {
+                    return self.fail();
+                }
+
+                self.pj.write_tape(0, self.c);
+                return self.object_begin();
+            }
+            _ => return self.fail(),
+        }
+
         self.pj.is_valid = true;
         Ok(())
     }
@@ -164,6 +185,82 @@ impl<'a> UnifiedMachine<'a> {
             self.succeed()
         } else {
             self.fail()
+        }
+    }
+
+    fn object_begin(&mut self) -> Result<(), SimdJsonError> {
+        self.update_char();
+        match self.c {
+            b'"' => {
+                if !parse_string(self.buf, self.len, self.pj, self.depth, self.idx) {
+                    return self.fail();
+                }
+
+                return self.object_key_state();
+            }
+            b'}' => {
+                return self.scope_end();
+            }
+            _ => return self.fail(),
+        }
+    }
+
+    fn object_key_state(&mut self) -> Result<(), SimdJsonError> {
+        self.update_char();
+
+        if self.c != b':' {
+            return self.fail();
+        }
+
+        self.update_char();
+
+        match self.c {
+            _ => return self.fail(),
+        }
+    }
+
+    fn object_continue(&mut self) -> Result<(), SimdJsonError> {
+        self.update_char();
+
+        match self.c {
+            _ => return self.fail(),
+        }
+    }
+
+    fn scope_end(&mut self) -> Result<(), SimdJsonError> {
+        self.depth -= 1;
+        self.pj
+            .write_tape(self.pj.containing_scope_offset[self.depth] as u64, self.c);
+        self.pj.annotate_previous_loc(
+            self.pj.containing_scope_offset[self.depth] as usize,
+            self.pj.get_current_loc() as u64,
+        );
+        self.ret_address[self.depth](self)
+    }
+
+    fn array_begin(&mut self) -> Result<(), SimdJsonError> {
+        self.update_char();
+        if self.c == b'[' {
+            return self.scope_end();
+        }
+        Ok(())
+    }
+
+    fn main_array_switch(&mut self) -> Result<(), SimdJsonError> {
+        match self.c {
+            _ => self.fail(),
+        }
+    }
+
+    fn array_continue(&mut self) -> Result<(), SimdJsonError> {
+        self.update_char();
+        match self.c {
+            b',' => {
+                self.update_char();
+                self.main_array_switch()
+            }
+            b']' => self.scope_end(),
+            _ => self.fail(),
         }
     }
 }
