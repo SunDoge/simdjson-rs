@@ -256,7 +256,7 @@ pub fn find_structural_bits(buf: *const u8, len: usize, pj: &mut ParsedJson) -> 
         idx += 64;
     }
 
-    if (idx < len) {
+    if idx < len {
         let tmpbuf = [0x20; 64].as_mut_ptr();
 
         unsafe {

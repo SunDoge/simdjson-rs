@@ -4,20 +4,21 @@ use super::utils::char::is_not_structural_or_whitespace;
 use std::mem;
 use std::ptr;
 
+use super::utils::number_parsing::parse_number;
 use super::utils::string_parsing_avx2::parse_string;
 use super::utils::SIMDJSON_PADDING;
 
 fn is_valid_true_atom(loc: *const u8) -> bool {
     let tv = "true    ".as_ptr() as u64;
     let mask4 = 0x00000000ffffffffu64;
-    let mut error = 0u32;
-    let mut locval = 0u64;
+    // let mut error = 0u32;
+    let locval = 0u64;
 
     unsafe {
         ptr::copy_nonoverlapping(loc, locval as *mut u8, mem::size_of::<u64>());
     }
 
-    error = ((locval & mask4) ^ tv) as u32;
+    let mut error = ((locval & mask4) ^ tv) as u32;
 
     error |= is_not_structural_or_whitespace(unsafe { *loc.offset(4) });
 
@@ -158,9 +159,44 @@ impl<'a> UnifiedMachine<'a> {
                 self.pj.write_tape(0, self.c);
                 Ok(())
             }
-            b'f' => Ok(()),
-            b'n' => Ok(()),
-            b'0' | b'1' | b'2' | b'3' | b'4' | b'5' | b'6' | b'7' | b'8' | b'9' => Ok(()),
+            b'f' => {
+                // [TODO] use fn match_atom(&mut self, fn(buf)->bool)
+                let mut copy = Vec::with_capacity(self.len + SIMDJSON_PADDING);
+                unsafe {
+                    ptr::copy_nonoverlapping(self.buf, copy.as_mut_ptr(), self.len);
+                }
+                copy[self.len] = b'\0';
+                if !is_valid_false_atom(unsafe { copy.as_ptr().offset(self.idx) }) {
+                    return self.fail();
+                }
+
+                self.pj.write_tape(0, self.c);
+                Ok(())
+            }
+            b'n' => {
+                let mut copy = Vec::with_capacity(self.len + SIMDJSON_PADDING);
+                unsafe {
+                    ptr::copy_nonoverlapping(self.buf, copy.as_mut_ptr(), self.len);
+                }
+                copy[self.len] = b'\0';
+                if !is_valid_null_atom(unsafe { copy.as_ptr().offset(self.idx) }) {
+                    return self.fail();
+                }
+
+                self.pj.write_tape(0, self.c);
+                Ok(())
+            }
+            b'0' | b'1' | b'2' | b'3' | b'4' | b'5' | b'6' | b'7' | b'8' | b'9' => {
+                let mut copy = Vec::with_capacity(self.len + SIMDJSON_PADDING);
+                unsafe {
+                    ptr::copy_nonoverlapping(self.buf, copy.as_mut_ptr(), self.len);
+                }
+                copy[self.len] = b'\0';
+                if !parse_number(self.buf, self.pj, self.idx, false) {
+                    return self.fail();
+                }
+                Ok(())
+            }
             b'-' => Ok(()),
             _ => self.fail(),
         }
